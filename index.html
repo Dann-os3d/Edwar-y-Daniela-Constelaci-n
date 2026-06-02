@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daniela & Edwar - Union of Two Constellations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #000;
+      overflow-x: hidden;
+      font-family: 'Cormorant Garamond', serif;
+    }
+
+    .stars-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .star-bg {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      animation: twinkle 3s ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .constellation-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      flex: 1;
+    }
+
+    .constellation-container {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      aspect-ratio: 16 / 9;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .text-section {
+      text-align: center;
+      padding: 30px 20px 50px;
+      opacity: 0;
+      animation: fadeInUp 2s ease forwards;
+      animation-delay: 6s;
+    }
+
+    .constellation-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      color: rgba(200, 220, 255, 0.8);
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      font-weight: 300;
+    }
+
+    .names {
+      font-family: 'Great Vibes', cursive;
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      background: linear-gradient(135deg, #ffd700 0%, #fff 25%, #ffd700 50%, #fff 75%, #ffd700 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s linear infinite;
+      margin-bottom: 15px;
+      text-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+    }
+
+    .subtitle {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 2px;
+      font-weight: 300;
+      font-style: italic;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% center; }
+      100% { background-position: -200% center; }
+    }
+
+    /* Shooting stars */
+    .shooting-star {
+      position: fixed;
+      width: 100px;
+      height: 2px;
+      background: linear-gradient(90deg, #fff, transparent);
+      border-radius: 50%;
+      animation: shoot 3s ease-in-out infinite;
+      opacity: 0;
+    }
+
+    .shooting-star:nth-child(1) { top: 10%; left: 0; animation-delay: 0s; }
+    .shooting-star:nth-child(2) { top: 30%; left: 20%; animation-delay: 2s; }
+    .shooting-star:nth-child(3) { top: 50%; left: 40%; animation-delay: 4s; }
+
+    @keyframes shoot {
+      0% { transform: translateX(0) rotate(-45deg); opacity: 0; }
+      10% { opacity: 1; }
+      30% { opacity: 1; }
+      100% { transform: translateX(500px) rotate(-45deg); opacity: 0; }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .constellation-container {
+        aspect-ratio: 4 / 3;
+      }
+      .text-section {
+        padding: 20px 15px 40px;
+      }
+      .constellation-label {
+        letter-spacing: 4px;
+        margin-bottom: 15px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .constellation-container {
+        aspect-ratio: 1 / 1;
+      }
+      .constellation-label {
+        letter-spacing: 3px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Background stars -->
+  <div class="stars-bg" id="starsBg"></div>
+
+  <!-- Shooting stars -->
+  <div class="shooting-star"></div>
+  <div class="shooting-star"></div>
+  <div class="shooting-star"></div>
+
+  <div class="container">
+    <div class="constellation-wrapper">
+      <div class="constellation-container">
+        <canvas id="constellationCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="text-section">
+      <p class="constellation-label">Cancer & Sagitario</p>
+      <h1 class="names">Daniela y Edwar</h1>
+      <p class="subtitle">Somos la unión de dos constelaciones, somos nuestro amor. </p>
+    </div>
+  </div>
+
+  <script>
+    // Create background stars
+    function createBackgroundStars() {
+      const container = document.getElementById('starsBg');
+      const starCount = 200;
+      
+      for (let i = 0; i < starCount; i++) {
+        const star = document.createElement('div');
+        star.className = 'star-bg';
+        const size = Math.random() * 2 + 1;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        star.style.left = Math.random() * 100 + '%';
+        star.style.top = Math.random() * 100 + '%';
+        star.style.animationDelay = Math.random() * 3 + 's';
+        star.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        container.appendChild(star);
+      }
+    }
+
+    class CombinedConstellationAnimator {
+      constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.particleSystem = [];
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+        
+        this.initConstellations();
+      }
+
+      resizeCanvas() {
+        const rect = this.canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas.width = rect.width * dpr;
+        this.canvas.height = rect.height * dpr;
+        this.ctx.scale(dpr, dpr);
+        this.width = rect.width;
+        this.height = rect.height;
+      }
+
+      initConstellations() {
+        // Cancer constellation (left side) - accurate astronomical pattern
+        const cancerBaseStars = [
+          { x: 0.18, y: 0.65 },   // Acubens (Alpha)
+          { x: 0.12, y: 0.45 },   // Al Tarf (Beta)
+          { x: 0.25, y: 0.35 },   // Asellus Borealis (Gamma)
+          { x: 0.30, y: 0.42 },   // Asellus Australis (Delta)
+          { x: 0.38, y: 0.25 },   // Iota Cancri
+          { x: 0.42, y: 0.58 },   // Lower extension
+        ];
+
+        const cancerLines = [
+          [0, 1], [1, 2], [2, 3], [3, 4], [3, 5], [0, 2]
+        ];
+
+        // Sagittarius constellation (right side) - teapot pattern
+        const sagittariusBaseStars = [
+          { x: 0.68, y: 0.22 },   // Kaus Borealis (Lambda) - Top of lid
+          { x: 0.62, y: 0.35 },   // Phi Sgr
+          { x: 0.74, y: 0.35 },   // Sigma Sgr (Nunki)
+          { x: 0.56, y: 0.45 },   // Delta Sgr (Kaus Media)
+          { x: 0.68, y: 0.45 },   // Tau Sgr
+          { x: 0.80, y: 0.45 },   // Zeta Sgr (Ascella)
+          { x: 0.50, y: 0.58 },   // Gamma Sgr (Alnasl) - Arrow tip
+          { x: 0.58, y: 0.65 },   // Epsilon Sgr (Kaus Australis)
+          { x: 0.68, y: 0.65 },   // Eta Sgr
+          { x: 0.78, y: 0.58 },   // Pi Sgr (Albaldah)
+          { x: 0.88, y: 0.50 },   // Spout tip
+        ];
+
+        const sagittariusLines = [
+          [0, 1], [0, 2],
+          [1, 3], [1, 4], [2, 4], [2, 5],
+          [3, 6], [3, 7],
+          [7, 8], [4, 8],
+          [5, 9], [9, 10],
+          [8, 9]
+        ];
+
+        // Connecting bridge between constellations
+        const bridgeStars = [
+          { x: 0.48, y: 0.40 },
+          { x: 0.52, y: 0.38 },
+        ];
+
+        const bridgeLines = [
+          [0, 1]  // Internal bridge connection
+        ];
+
+        // Combine all stars with their group info
+        this.cancerStars = cancerBaseStars.map(s => ({...s, group: 'cancer'}));
+        this.sagittariusStars = sagittariusBaseStars.map(s => ({...s, group: 'sagittarius'}));
+        this.bridgeStars = bridgeStars.map(s => ({...s, group: 'bridge'}));
+
+        // All stars combined
+        this.allStars = [...this.cancerStars, ...this.sagittariusStars, ...this.bridgeStars];
+        
+        // Adjust line indices for combined array
+        const cancerOffset = 0;
+        const sagittariusOffset = this.cancerStars.length;
+        const bridgeOffset = this.cancerStars.length + this.sagittariusStars.length;
+
+        this.allLines = [
+          ...cancerLines.map(([a, b]) => [a + cancerOffset, b + cancerOffset]),
+          ...sagittariusLines.map(([a, b]) => [a + sagittariusOffset, b + sagittariusOffset]),
+          ...bridgeLines.map(([a, b]) => [a + bridgeOffset, b + bridgeOffset]),
+          // Connect Cancer to bridge
+          [5, bridgeOffset],  // Cancer lower extension to bridge
+          // Connect bridge to Sagittarius
+          [bridgeOffset + 1, sagittariusOffset + 3],  // Bridge to Sagittarius
+        ];
+
+        // Animation state
+        this.starProgress = this.allStars.map(() => 0);
+        this.lineProgress = this.allLines.map(() => 0);
+        this.currentStar = 0;
+        this.currentLine = 0;
+        this.starAnimationDone = false;
+      }
+
+      getScaledPos(star) {
+        return {
+          x: star.x * this.width,
+          y: star.y * this.height
+        };
+      }
+
+      drawStar(x, y, size, opacity, group) {
+        const ctx = this.ctx;
+        
+        // Color based on group
+        let color1, color2;
+        if (group === 'cancer') {
+          color1 = `rgba(255, 220, 180, ${opacity})`;
+          color2 = `rgba(255, 180, 120, ${opacity * 0.5})`;
+        } else if (group === 'sagittarius') {
+          color1 = `rgba(180, 220, 255, ${opacity})`;
+          color2 = `rgba(120, 180, 255, ${opacity * 0.5})`;
+        } else {
+          color1 = `rgba(255, 255, 255, ${opacity})`;
+          color2 = `rgba(200, 200, 255, ${opacity * 0.5})`;
+        }
+        
+        // Glow effect
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, size * 4);
+        gradient.addColorStop(0, color1);
+        gradient.addColorStop(0.3, color2);
+        gradient.addColorStop(1, 'rgba(100, 150, 255, 0)');
+        
+        ctx.beginPath();
+        ctx.arc(x, y, size * 4, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Core star
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.fill();
+        
+        // Star rays
+        if (opacity > 0.5) {
+          ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.3})`;
+          ctx.lineWidth = 1;
+          const rayLength = size * 5;
+          
+          for (let i = 0; i < 4; i++) {
+            const angle = (i * Math.PI / 2) + Math.PI / 4;
+            ctx.beginPath();
+            ctx.moveTo(x + Math.cos(angle) * size, y + Math.sin(angle) * size);
+            ctx.lineTo(x + Math.cos(angle) * rayLength, y + Math.sin(angle) * rayLength);
+            ctx.stroke();
+          }
+        }
+      }
+
+      drawLine(x1, y1, x2, y2, progress, group1, group2) {
+        const ctx = this.ctx;
+        const currentX = x1 + (x2 - x1) * progress;
+        const currentY = y1 + (y2 - y1) * progress;
+        
+        // Determine line color based on groups
+        let lineColor;
+        if (group1 === 'cancer' && group2 === 'cancer') {
+          lineColor = 'rgba(255, 200, 150, 0.6)';
+        } else if (group1 === 'sagittarius' && group2 === 'sagittarius') {
+          lineColor = 'rgba(150, 200, 255, 0.6)';
+        } else {
+          lineColor = 'rgba(255, 220, 255, 0.7)';  // Bridge color - magical purple-ish
+        }
+        
+        // Line glow
+        ctx.strokeStyle = lineColor.replace('0.6', '0.2').replace('0.7', '0.3');
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(currentX, currentY);
+        ctx.stroke();
+        
+        // Main line
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(currentX, currentY);
+        ctx.stroke();
+        
+        // Traveling particle
+        if (progress > 0 && progress < 1) {
+          this.drawStar(currentX, currentY, 2, 1, 'bridge');
+        }
+      }
+
+      addParticle(x, y, group) {
+        for (let i = 0; i < 5; i++) {
+          this.particleSystem.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 2,
+            vy: (Math.random() - 0.5) * 2,
+            life: 1,
+            size: Math.random() * 2 + 1,
+            group
+          });
+        }
+      }
+
+      updateParticles() {
+        this.particleSystem = this.particleSystem.filter(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.02;
+          
+          if (p.life > 0) {
+            this.drawStar(p.x, p.y, p.size * p.life, p.life, p.group);
+            return true;
+          }
+          return false;
+        });
+      }
+
+      animate() {
+        this.ctx.clearRect(0, 0, this.width, this.height);
+        
+        // Draw completed stars
+        for (let i = 0; i < this.allStars.length; i++) {
+          if (this.starProgress[i] > 0) {
+            const star = this.allStars[i];
+            const pos = this.getScaledPos(star);
+            const baseSize = Math.min(this.width, this.height) * 0.008;
+            this.drawStar(pos.x, pos.y, baseSize, this.starProgress[i], star.group);
+          }
+        }
+        
+        // Draw completed lines
+        for (let i = 0; i < this.allLines.length; i++) {
+          if (this.lineProgress[i] > 0) {
+            const [startIdx, endIdx] = this.allLines[i];
+            const start = this.getScaledPos(this.allStars[startIdx]);
+            const end = this.getScaledPos(this.allStars[endIdx]);
+            this.drawLine(
+              start.x, start.y,
+              end.x, end.y,
+              this.lineProgress[i],
+              this.allStars[startIdx].group,
+              this.allStars[endIdx].group
+            );
+          }
+        }
+        
+        // Animate current star
+        if (this.currentStar < this.allStars.length) {
+          this.starProgress[this.currentStar] += 0.06;
+          if (this.starProgress[this.currentStar] >= 1) {
+            this.starProgress[this.currentStar] = 1;
+            const star = this.allStars[this.currentStar];
+            const pos = this.getScaledPos(star);
+            this.addParticle(pos.x, pos.y, star.group);
+            this.currentStar++;
+          }
+        } else if (!this.starAnimationDone) {
+          this.starAnimationDone = true;
+        }
+        
+        // Animate current line after all stars are done
+        if (this.starAnimationDone && this.currentLine < this.allLines.length) {
+          this.lineProgress[this.currentLine] += 0.04;
+          if (this.lineProgress[this.currentLine] >= 1) {
+            this.lineProgress[this.currentLine] = 1;
+            this.currentLine++;
+          }
+        }
+        
+        this.updateParticles();
+        
+        requestAnimationFrame(() => this.animate());
+      }
+
+      start(delay = 0) {
+        setTimeout(() => this.animate(), delay);
+      }
+    }
+
+    // Initialize
+    createBackgroundStars();
+    
+    const constellationAnimator = new CombinedConstellationAnimator('constellationCanvas');
+    constellationAnimator.start(500);
+  </script>
+</body>
+</html>
